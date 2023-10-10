@@ -1,5 +1,6 @@
 package com.sunnyweather.android.ui.weather
 
+import android.content.Context
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -7,6 +8,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -22,9 +25,13 @@ import com.sunnyweather.android.logic.model.Weather
 import com.sunnyweather.android.logic.model.getSky
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import com.sunnyweather.android.SunnyWeatherApplication.Companion.context
 
 class WeatherActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityWeatherBinding
+    public lateinit var binding: ActivityWeatherBinding
 //    private lateinit var nowbinding: NowBinding
 //    private lateinit var forcecastbinging:ForecastBinding
 //    private lateinit var lifeIndexBinding: LifeIndexBinding
@@ -39,6 +46,7 @@ class WeatherActivity : AppCompatActivity() {
     private lateinit var dressingText: TextView
     private lateinit var ultravioletText: TextView
     private lateinit var carWashingText: TextView
+    private lateinit var nabBtn:Button
 
     val viewModel by lazy { ViewModelProvider(this).get(WeatherViewModel::class.java) }
 
@@ -61,6 +69,7 @@ class WeatherActivity : AppCompatActivity() {
         dressingText = findViewById(R.id.dressingText)
         ultravioletText = findViewById(R.id.ultravioletText)
         carWashingText = findViewById(R.id.carWashingText)
+        nabBtn=findViewById(R.id.navBtn)
 //        val nowlayout=binding.now.root
 
         if (viewModel.locationLng.isEmpty()){
@@ -85,9 +94,41 @@ class WeatherActivity : AppCompatActivity() {
                 Toast.makeText(this,"无法成功获取天气信息",Toast.LENGTH_SHORT).show()
                 result.exceptionOrNull()?.printStackTrace()
             }
+            binding.swipeRefresh.isRefreshing=false
         })
+//        val color = ContextCompat.getColor(context, R.color.colorPrimary)
+        binding.swipeRefresh.setColorSchemeColors(ContextCompat.getColor(context, R.color.colorPrimary))
+        refreshWeather()
+        binding.swipeRefresh.setOnRefreshListener {
+            refreshWeather()
+        }
         viewModel.refreshWeather(viewModel.locationLng,viewModel.locationLat)
 
+        nabBtn.setOnClickListener {
+            binding.drawerLayout.openDrawer(GravityCompat.START)
+        }
+        binding.drawerLayout.addDrawerListener(object:DrawerLayout.DrawerListener{
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
+            }
+
+            override fun onDrawerOpened(drawerView: View) {
+            }
+
+            override fun onDrawerClosed(drawerView: View) {
+                val manager=getSystemService(Context.INPUT_METHOD_SERVICE)
+                as InputMethodManager
+                manager.hideSoftInputFromWindow(drawerView.windowToken,
+                InputMethodManager.HIDE_NOT_ALWAYS)
+            }
+
+            override fun onDrawerStateChanged(newState: Int) {
+            }
+        })
+    }
+
+    fun refreshWeather(){
+        viewModel.refreshWeather(viewModel.locationLng,viewModel.locationLat)
+        binding.swipeRefresh.isRefreshing=true
     }
 
     private fun showWeatherInfo(weather: Weather) {
